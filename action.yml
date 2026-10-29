@@ -1,0 +1,57 @@
+name: "Motioneed Release Video: AI Product Launch Video from Release Notes"
+description: "Turn every GitHub Release into an AI product launch video. Release notes and your product URL to an MP4 with your real UI, attached to the release."
+author: "Motioneed"
+branding:
+  icon: "film"
+  color: "red"
+inputs:
+  api-key:
+    description: "Motioneed API key (mk_...). Create one at https://www.motioneed.com/account and store it as a secret."
+    required: true
+  url:
+    description: "Public product page to read for the brand, colors, copy and interface, e.g. https://example.com"
+    required: false
+  prompt:
+    description: "What the video is about. Default: built from the release name and notes."
+    required: false
+  seconds:
+    description: "Length: 10, 15, 30, 60 or 90."
+    default: "15"
+  aspects:
+    description: "Frame, or a comma list for one video each: 16:9, 9:16, 4:3, 3:4."
+    default: "16:9"
+  purpose:
+    description: "launch, demo or ad."
+    default: "launch"
+  voice:
+    description: "Add narration (true or false)."
+    default: "false"
+  upload:
+    description: "Attach the MP4 to the release (true or false)."
+    default: "true"
+  share:
+    description: "Turn on a public share link (true or false)."
+    default: "true"
+  timeout-minutes:
+    description: "How long to wait for the video."
+    default: "20"
+  github-token:
+    description: "Token that can upload release assets."
+    default: ${{ github.token }}
+  api-base:
+    description: "Motioneed base URL."
+    default: "https://www.motioneed.com"
+outputs:
+  video-id:
+    description: "Id of the first video."
+  video-url:
+    description: "Download URL of the first video (needs the API key)."
+  share-url:
+    description: "Public link to the first video, when share is on."
+  studio-url:
+    description: "The first video in the Motioneed studio."
+  videos:
+    description: "JSON array of every video made."
+runs:
+  using: "node20"
+  main: "index.mjs"
