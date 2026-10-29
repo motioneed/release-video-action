@@ -1,5 +1,5 @@
 name: "Motioneed Release Video: AI Product Launch Video from Release Notes"
-description: "Turn every GitHub Release into an AI product launch video. Release notes and your product URL to an MP4 with your real UI, attached to the release."
+description: "Turn every GitHub Release into an AI product launch video: release notes to an MP4 with your real product UI."
 author: "Motioneed"
 branding:
   icon: "film"
