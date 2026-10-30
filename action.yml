@@ -53,5 +53,5 @@ outputs:
   videos:
     description: "JSON array of every video made."
 runs:
-  using: "node20"
+  using: "node24"
   main: "index.mjs"

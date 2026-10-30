@@ -40,7 +40,7 @@ jobs:
           aspects: "16:9,9:16"
 ```
 
-Publish a release. A few minutes later the videos are on the release page and in the job summary.
+Publish a release. About 10 to 15 minutes later the videos are on the release page and in the job summary (a 15-second video took 11 minutes in our runs, 30 seconds with narration 14). For 60 or 90 seconds, raise `timeout-minutes` to `40`.
 
 ## Inputs
 
