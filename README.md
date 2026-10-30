@@ -6,7 +6,7 @@
 - Your real product UI, not stock footage or templates
 - 16:9 for YouTube and your site, 9:16 for Reels, Shorts, TikTok and LinkedIn
 - A public share link and the MP4 on the release
-- Made by [Motioneed](https://www.motioneed.com), an AI video generator for product launches, demos and ads
+- Made by [Motioneed](https://www.motioneed.com?ref=action), an AI video generator for product launches, demos and ads
 
 ## Example
 
@@ -18,7 +18,7 @@ This video was made by this action from a real release: a 30-second demo with na
 
 ## Quick start
 
-1. Create an API key at [motioneed.com/account](https://www.motioneed.com/account) (paid plans and credit packs).
+1. Create an API key at [motioneed.com/account](https://www.motioneed.com/account?ref=action) (paid plans and credit packs).
 2. Add it to your repository as the secret `MOTIONEED_API_KEY`.
 3. Add `.github/workflows/release-video.yml`:
 
@@ -88,19 +88,19 @@ The action uses the release name, tag and notes as the brief. It drops images, c
 
 ### What does the video look like?
 
-A short motion-graphics video with your real logo, colors, copy and product interface, a music score cut to the beat, and optional narration. See examples at [motioneed.com/showcase](https://www.motioneed.com/showcase).
+A short motion-graphics video with your real logo, colors, copy and product interface, a music score cut to the beat, and optional narration. See examples at [motioneed.com/showcase](https://www.motioneed.com/showcase?ref=action).
 
 ### How much does it cost?
 
-Each video spends Motioneed credits at the same rate as the web studio. Credits are returned if a video fails. See [pricing](https://www.motioneed.com/billing).
+Each video spends Motioneed credits at the same rate as the web studio. Credits are returned if a video fails. See [pricing](https://www.motioneed.com/billing?ref=action).
 
 ### Can I edit the video after it is made?
 
-Yes. `studio-url` opens it in the Motioneed studio, where you can revise it in plain words, or use `revise_video` from the [API or MCP server](https://www.motioneed.com/developers).
+Yes. `studio-url` opens it in the Motioneed studio, where you can revise it in plain words, or use `revise_video` from the [API or MCP server](https://www.motioneed.com/developers?ref=action).
 
 ### Can my AI agent do this without GitHub Actions?
 
-Yes. Motioneed has a REST API and an MCP server for Claude, Cursor and other agents. See [motioneed.com/developers](https://www.motioneed.com/developers).
+Yes. Motioneed has a REST API and an MCP server for Claude, Cursor and other agents. See [motioneed.com/developers](https://www.motioneed.com/developers?ref=action).
 
 ## License
 
