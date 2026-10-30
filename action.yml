@@ -32,6 +32,15 @@ inputs:
   share:
     description: "Turn on a public share link (true or false)."
     default: "true"
+  release-images:
+    description: "Put the screenshots and GIFs in the release notes on screen (true or false)."
+    default: "true"
+  images:
+    description: "More images to show, one per line: repo paths (needs actions/checkout) or URLs. Up to 10 in all."
+    required: false
+  style-images:
+    description: "Images whose look to match, one per line (repo paths or URLs). Never shown."
+    required: false
   timeout-minutes:
     description: "How long to wait for the video."
     default: "20"

@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { promptFromRelease, readInputs } from "./lib.mjs";
+import { collectImages, promptFromRelease, rawUrl, readInputs, releaseImages } from "./lib.mjs";
 
 const entry = fileURLToPath(new URL("./index.mjs", import.meta.url));
 
@@ -66,6 +66,10 @@ async function mock(t, { fail = false } = {}) {
         return json(200, view(one[1], count < 2 ? "running" : fail ? "failed" : "ready"));
       }
       if (one && one[2] === "/share") return json(200, view(one[1], "ready", { share_url: `${origin}/s/${one[1]}` }));
+      if (req.url === "/img/shot.png") {
+        res.writeHead(200, { "content-type": "image/png" });
+        return res.end(PNG_BYTES);
+      }
       if (one && one[2] === "/video") {
         res.writeHead(200, { "content-type": "video/mp4" });
         return res.end(Buffer.from("MP4DATA"));
@@ -133,4 +137,81 @@ test("a failed video, a missing source or an API refusal fails the step", async 
   const refused = await action({ "INPUT_API-KEY": "mk_x", INPUT_PROMPT: "x y", "INPUT_API-BASE": `${origin}/nope` }, {});
   assert.equal(refused.code, 1);
   assert.match(refused.stdout, /::error::Motioneed: no \(not_found\)/);
+});
+
+const PNG_BYTES = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+
+test("release notes give their screenshots in order, once each (spec 528)", () => {
+  const body = [
+    "## New billing page",
+    "![Billing page](https://github.com/user-attachments/assets/1111 \"the new page\")",
+    "<img width=\"800\" alt=\"Usage chart\" src=\"https://github.com/user-attachments/assets/2222\" />",
+    "<!-- ![draft](https://example.com/draft.png) -->",
+    "![again](https://github.com/user-attachments/assets/1111)",
+    "![local](docs/shot.png)",
+  ].join("\n");
+  assert.deepEqual(releaseImages(body), [
+    { source: "https://github.com/user-attachments/assets/1111", name: "Billing page", use: "screen" },
+    { source: "https://github.com/user-attachments/assets/2222", name: "Usage chart", use: "screen" },
+  ]);
+  assert.deepEqual(releaseImages(""), []);
+  const base = { "INPUT_API-KEY": "mk_x" };
+  assert.equal(readInputs(base).releaseImages, true);
+  assert.equal(readInputs({ ...base, "INPUT_RELEASE-IMAGES": "false" }).releaseImages, false);
+  assert.deepEqual(readInputs({ ...base, INPUT_IMAGES: "docs/a.png\n\n# a comment\n https://x.dev/b.png " }).images, ["docs/a.png", "https://x.dev/b.png"]);
+});
+
+test("images are fetched with the token only on GitHub hosts, read from the repo, and a bad one is a warning (spec 528)", async () => {
+  const workspace = mkdtempSync(join(tmpdir(), "ws-"));
+  mkdirSync(join(workspace, "docs"));
+  writeFileSync(join(workspace, "docs", "shot.png"), PNG_BYTES);
+  writeFileSync(join(workspace, "docs", "notes.txt"), "not an image");
+  const seen = [];
+  const fetcher = async (url, init) => {
+    seen.push([String(url), init.headers.authorization || ""]);
+    return String(url).includes("missing") ? new Response("no", { status: 404 }) : new Response(PNG_BYTES);
+  };
+  const warnings = [];
+  const inputs = {
+    githubToken: "ghs_token",
+    releaseImages: true,
+    images: ["docs/shot.png", "https://example.com/missing.png", "docs/notes.txt", "../outside.png", "docs/none.png"],
+    styleImages: ["https://cdn.example.com/look.png"],
+  };
+  const release = { body: "![Billing](https://github.com/user-attachments/assets/1111)" };
+  const images = await collectImages(inputs, release, { warn: (text) => warnings.push(text), fetcher, workspace });
+  assert.deepEqual(images.map(({ use, name }) => [use, name]), [["screen", "Billing"], ["screen", "shot"], ["style", "look"]]);
+  assert.ok(images.every((image) => image.data.startsWith("data:image/png;base64,")));
+  assert.deepEqual(seen, [
+    ["https://github.com/user-attachments/assets/1111", "Bearer ghs_token"],
+    ["https://example.com/missing.png", ""],
+    ["https://cdn.example.com/look.png", ""],
+  ]);
+  assert.equal(warnings.length, 4);
+  assert.match(warnings.join("\n"), /missing\.png left out: HTTP 404/);
+  assert.match(warnings.join("\n"), /notes\.txt left out: it is not a PNG, JPEG, WebP or GIF/);
+  assert.match(warnings.join("\n"), /outside\.png left out: the path is outside the repository/);
+  assert.match(warnings.join("\n"), /none\.png left out: no such file in the workspace \(add actions\/checkout/);
+  const many = await collectImages({ ...inputs, releaseImages: false, images: Array(12).fill("docs/shot.png"), styleImages: [] }, null, { warn: (text) => warnings.push(text), fetcher, workspace });
+  assert.equal(many.length, 10);
+  assert.match(warnings.at(-1), /12 images found; using the first 10/);
+});
+
+test("a release with a screenshot sends it with the video (spec 528)", async (t) => {
+  const { calls, origin } = await mock(t);
+  const release = { tag_name: "v2.4", name: "v2.4", body: `* New chart\n\n![Chart](${origin}/img/shot.png)`, upload_url: `${origin}/uploads/repos/acme/app/releases/2/assets{?name,label}` };
+  const run = await action({ "INPUT_API-KEY": "mk_secret", INPUT_URL: "https://acme.dev", "INPUT_API-BASE": origin, "INPUT_GITHUB-TOKEN": "ghs_token" }, { release });
+  assert.equal(run.code, 0, run.stdout);
+  assert.match(run.stdout, /Images: 1 \(1 on screen\)/);
+  const created = JSON.parse(calls.find((c) => c.url === "/v1/videos").body);
+  assert.deepEqual(created.images.map(({ use, name }) => [use, name]), [["screen", "Chart"]]);
+  assert.doesNotMatch(created.prompt, /img\/shot/, "the prompt stays words only");
+  assert.equal(calls.find((c) => c.url === "/img/shot.png").auth, undefined, "no token to a non-GitHub host");
+});
+
+test("repo image links go to the raw host, where the job token works (spec 528)", () => {
+  assert.equal(String(rawUrl("https://github.com/acme/app/raw/main/docs/shot.png")), "https://raw.githubusercontent.com/acme/app/main/docs/shot.png");
+  assert.equal(String(rawUrl("https://github.com/acme/app/blob/v2.4/docs/a%20b.png")), "https://raw.githubusercontent.com/acme/app/v2.4/docs/a%20b.png");
+  assert.equal(String(rawUrl("https://github.com/user-attachments/assets/1111")), "https://github.com/user-attachments/assets/1111");
+  assert.equal(String(rawUrl("https://example.com/acme/app/raw/main/x.png")), "https://example.com/acme/app/raw/main/x.png");
 });

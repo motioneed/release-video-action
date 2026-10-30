@@ -4,6 +4,7 @@
 
 - Release notes and changelog to video, automatically
 - Your real product UI, not stock footage or templates
+- Screenshots and GIFs in your release notes go on screen, so the video shows what changed
 - 16:9 for YouTube and your site, 9:16 for Reels, Shorts, TikTok and LinkedIn
 - A public share link and the MP4 on the release
 - Made by [Motioneed](https://www.motioneed.com?ref=action), an AI video generator for product launches, demos and ads
@@ -55,6 +56,9 @@ Publish a release. About 10 to 15 minutes later the videos are on the release pa
 | `voice` | `false` | Add AI narration |
 | `upload` | `true` | Attach the MP4 to the release |
 | `share` | `true` | Make a public share link |
+| `release-images` | `true` | Show the screenshots and GIFs in the release notes |
+| `images` | | More images to show, one per line: repo paths or URLs (up to 10 in all) |
+| `style-images` | | Images whose look to match, one per line; never shown |
 | `timeout-minutes` | `20` | How long to wait |
 | `github-token` | `github.token` | Needs `contents: write` to upload |
 
@@ -84,11 +88,29 @@ Add this action to a workflow that runs `on: release: types: [published]`, with 
 
 ### How do I turn a changelog or release notes into a video?
 
-The action uses the release name, tag and notes as the brief. It drops images, contributor lists, PR links and the Full Changelog line, and keeps what changed. To write the brief yourself, set `prompt`.
+The action uses the release name, tag and notes as the brief. It keeps what changed, puts the screenshots and GIFs in the notes on screen, and drops contributor lists, PR links and the Full Changelog line. To write the brief yourself, set `prompt`.
 
 ### What does the video look like?
 
 A short motion-graphics video with your real logo, colors, copy and product interface, a music score cut to the beat, and optional narration. See examples at [motioneed.com/showcase](https://www.motioneed.com/showcase?ref=action).
+
+### Can I show my own screenshots?
+
+Yes. Images in the release notes (`![…](…)` or `<img>`) go on screen in order, PNG, JPEG, WebP or GIF up to 5 MB each, 10 in all. Add more from your repository or the web with `images`, one per line; repo paths need `actions/checkout` before this step:
+
+```yaml
+    steps:
+      - uses: actions/checkout@v5
+      - uses: motioneed/release-video-action@v1
+        with:
+          api-key: ${{ secrets.MOTIONEED_API_KEY }}
+          url: https://your-product.com
+          images: |
+            docs/screenshots/new-dashboard.png
+            https://your-product.com/img/billing.png
+```
+
+The action downloads each image itself and sends the job's token only to GitHub hosts, so images in a private repository work too, including `github.com/…/raw/…` and `…/blob/…` links. An image that cannot be read is a warning and the video is made without it.
 
 ### How much does it cost?
 
