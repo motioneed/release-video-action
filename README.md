@@ -8,6 +8,14 @@
 - A public share link and the MP4 on the release
 - Made by [Motioneed](https://www.motioneed.com), an AI video generator for product launches, demos and ads
 
+## Example
+
+This video was made by this action from a real release: a 30-second demo with narration, from the release notes and one prompt.
+
+[![A 30-second launch video made by this action from a GitHub Release](.github/demo.gif)](https://www.motioneed.com/s/949b15a17306a3c7d3aeb1994de8b616)
+
+[Watch it with sound](https://www.motioneed.com/s/949b15a17306a3c7d3aeb1994de8b616)
+
 ## Quick start
 
 1. Create an API key at [motioneed.com/account](https://www.motioneed.com/account) (paid plans and credit packs).
