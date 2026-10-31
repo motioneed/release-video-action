@@ -11,11 +11,11 @@
 
 ## Example
 
-This video was made by this action from a real release: a 30-second demo with narration, from the release notes and one prompt.
+This video was made by this action from a real release: a 30-second demo with narration, from the release notes, the two screenshots in them, and one prompt.
 
-[![A 30-second launch video made by this action from a GitHub Release](.github/demo.gif)](https://www.motioneed.com/s/949b15a17306a3c7d3aeb1994de8b616)
+[![A 30-second launch video made by this action from a GitHub Release](.github/demo.gif)](https://www.motioneed.com/s/32d10a8c13a6bfd41dcd3ba1a38f27cc)
 
-[Watch it with sound](https://www.motioneed.com/s/949b15a17306a3c7d3aeb1994de8b616)
+[Watch it with sound](https://www.motioneed.com/s/32d10a8c13a6bfd41dcd3ba1a38f27cc)
 
 ## Quick start
 
