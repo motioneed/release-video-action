@@ -22,6 +22,7 @@ try {
   setOutput("video-url", first.video_url || "");
   setOutput("share-url", first.share_url || "");
   setOutput("studio-url", first.studio_url || "");
+  setOutput("poster-url", first.release_poster || "");
   setOutput("videos", JSON.stringify(videos));
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary(videos, event.release));
   console.log(summary(videos, event.release));

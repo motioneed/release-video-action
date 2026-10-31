@@ -41,7 +41,7 @@ test("inputs are checked before anything is spent", () => {
 });
 
 // A stand-in for Motioneed's /v1 and GitHub's uploads endpoint in one server.
-async function mock(t, { fail = false } = {}) {
+async function mock(t, { fail = false, poster = true } = {}) {
   const calls = [];
   const polls = new Map();
   const server = createServer((req, res) => {
@@ -73,6 +73,10 @@ async function mock(t, { fail = false } = {}) {
       if (one && one[2] === "/video") {
         res.writeHead(200, { "content-type": "video/mp4" });
         return res.end(Buffer.from("MP4DATA"));
+      }
+      if (one && one[2] === "/poster" && poster) {
+        res.writeHead(200, { "content-type": "image/jpeg" });
+        return res.end(Buffer.from("JPGDATA"));
       }
       if (req.method === "POST" && req.url.startsWith("/uploads/")) return json(201, { browser_download_url: `${origin}/dl/${new URL(req.url, origin).searchParams.get("name")}` });
       json(404, { error: { code: "not_found", message: "no" } });
@@ -109,8 +113,11 @@ test("a published release gets one video per frame, attached and shared", async 
   assert.equal(created[0].purpose, "launch");
   assert.ok(calls.filter((c) => c.url.startsWith("/v1/")).every((c) => c.auth === "Bearer mk_secret"));
   const uploads = calls.filter((c) => c.url.startsWith("/uploads/"));
-  assert.deepEqual(uploads.map((c) => new URL(c.url, origin).searchParams.get("name")), ["motioneed-v2.3-16x9.mp4", "motioneed-v2.3-9x16.mp4"]);
-  assert.ok(uploads.every((c) => c.auth === "Bearer ghs_token" && c.type === "video/mp4" && c.body === "MP4DATA"));
+  // Each video with its cover beside it (spec 549).
+  assert.deepEqual(uploads.map((c) => new URL(c.url, origin).searchParams.get("name")), ["motioneed-v2.3-16x9.mp4", "motioneed-v2.3-16x9.jpg", "motioneed-v2.3-9x16.mp4", "motioneed-v2.3-9x16.jpg"]);
+  assert.ok(uploads.every((c) => c.auth === "Bearer ghs_token" && (c.url.includes(".mp4") ? c.type === "video/mp4" && c.body === "MP4DATA" : c.type === "image/jpeg" && c.body === "JPGDATA")));
+  assert.match(run.outputs, new RegExp(`poster-url<<\\S+\\n${origin}/dl/motioneed-v2\\.3-16x9\\.jpg\\n`));
+  assert.match(run.summary, /!\[Cover\]\(.*motioneed-v2\.3-16x9\.jpg\)/);
   assert.match(run.outputs, /video-id<<\S+\nv1\n/);
   assert.match(run.outputs, new RegExp(`share-url<<\\S+\\n${origin}/s/v1\\n`));
   assert.equal(JSON.parse(run.outputs.match(/videos<<(\S+)\n([\s\S]*?)\n\1/)[2]).length, 2);
@@ -230,4 +237,14 @@ test("badges, buttons and SVGs in release notes are not screenshots and are left
     "![Dark mode](https://acme.dev/img/dark-mode.png)",
   ].join("\n");
   assert.deepEqual(releaseImages(body).map((item) => item.name), ["New editor", "Dark mode"]);
+});
+
+test("a video whose cover cannot be had is still attached, with a warning (spec 549)", async (t) => {
+  const { calls, origin } = await mock(t, { poster: false });
+  const release = { tag_name: "v2.5", name: "v2.5", body: "* Faster", upload_url: `${origin}/uploads/repos/acme/app/releases/3/assets{?name,label}` };
+  const run = await action({ "INPUT_API-KEY": "mk_x", INPUT_URL: "https://acme.dev", "INPUT_API-BASE": origin, "INPUT_GITHUB-TOKEN": "ghs_token" }, { release });
+  assert.equal(run.code, 0, run.stdout);
+  assert.match(run.stdout, /::warning::No cover attached: Motioneed answered 404/);
+  assert.deepEqual(calls.filter((c) => c.url.startsWith("/uploads/")).map((c) => new URL(c.url, origin).searchParams.get("name")), ["motioneed-v2.5-16x9.mp4"]);
+  assert.match(run.outputs, /poster-url<<(\S+)\n\n\1/);
 });

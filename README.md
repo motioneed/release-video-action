@@ -6,7 +6,7 @@
 - Your real product UI, not stock footage or templates
 - Screenshots and GIFs in your release notes go on screen, so the video shows what changed
 - 16:9 for YouTube and your site, 9:16 for Reels, Shorts, TikTok and LinkedIn
-- A public share link and the MP4 on the release
+- A public share link, and the MP4 with its cover on the release
 - Made by [Motioneed](https://www.motioneed.com?ref=action), an AI video generator for product launches, demos and ads
 
 ## Example
@@ -64,7 +64,7 @@ Publish a release. About 10 to 15 minutes later the videos are on the release pa
 
 ## Outputs
 
-`video-id`, `video-url`, `share-url`, `studio-url` for the first video, and `videos` as JSON for all of them.
+`video-id`, `video-url`, `share-url`, `studio-url` and `poster-url` (its cover, a public JPEG on the release) for the first video, and `videos` as JSON for all of them.
 
 Post the link to Slack or Discord in the next step:
 

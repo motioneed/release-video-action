@@ -59,6 +59,8 @@ outputs:
     description: "Public link to the first video, when share is on."
   studio-url:
     description: "The first video in the Motioneed studio."
+  poster-url:
+    description: "Public URL of the first video's cover, attached to the release as a JPEG."
   videos:
     description: "JSON array of every video made."
 runs:

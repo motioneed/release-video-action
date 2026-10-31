@@ -198,21 +198,31 @@ export async function run(inputs, event = {}, { log = console.log, warn = (text)
     }
     if (inputs.share) video = await api(inputs, `/videos/${video.id}/share`, { method: "POST", body: JSON.stringify({ on: true }) });
     let asset = null;
+    let poster = null;
     if (inputs.upload && release?.upload_url) {
-      const file = Buffer.from(await (await api(inputs, `/videos/${video.id}/video`, { raw: true })).arrayBuffer());
-      const name = `motioneed-${tag}-${item.aspect.replace(":", "x")}.mp4`;
-      const target = `${release.upload_url.replace(/\{[^}]*\}$/, "")}?name=${encodeURIComponent(name)}`;
-      const uploaded = await fetch(target, { method: "POST", headers: { authorization: `Bearer ${inputs.githubToken}`, "content-type": "video/mp4", "content-length": String(file.length), accept: "application/vnd.github+json" }, body: file });
-      if (!uploaded.ok) throw new Error(`Uploading ${name} to the release failed (${uploaded.status}). The token needs contents: write.`);
-      asset = (await uploaded.json()).browser_download_url || null;
-      log(`Attached ${name}`);
+      const name = `motioneed-${tag}-${item.aspect.replace(":", "x")}`;
+      const attach = async (file, type, ext) => {
+        const target = `${release.upload_url.replace(/\{[^}]*\}$/, "")}?name=${encodeURIComponent(`${name}.${ext}`)}`;
+        const uploaded = await fetch(target, { method: "POST", headers: { authorization: `Bearer ${inputs.githubToken}`, "content-type": type, "content-length": String(file.length), accept: "application/vnd.github+json" }, body: file });
+        if (!uploaded.ok) throw new Error(`Uploading ${name}.${ext} to the release failed (${uploaded.status}). The token needs contents: write.`);
+        log(`Attached ${name}.${ext}`);
+        return (await uploaded.json()).browser_download_url || null;
+      };
+      asset = await attach(Buffer.from(await (await api(inputs, `/videos/${video.id}/video`, { raw: true })).arrayBuffer()), "video/mp4", "mp4");
+      // Its cover beside it (spec 549): a public picture for a README or a post. Missing is a warning.
+      try {
+        poster = await attach(Buffer.from(await (await api(inputs, `/videos/${video.id}/poster`, { raw: true })).arrayBuffer()), "image/jpeg", "jpg");
+      } catch (error) {
+        warn(`No cover attached: ${error instanceof Error ? error.message : error}`);
+      }
     }
-    done.push({ aspect: item.aspect, id: video.id, video_url: video.video_url, share_url: video.share_url, studio_url: video.studio_url, release_asset: asset });
+    done.push({ aspect: item.aspect, id: video.id, video_url: video.video_url, poster_url: video.poster_url || null, share_url: video.share_url, studio_url: video.studio_url, release_asset: asset, release_poster: poster });
   }
   return done;
 }
 
 export function summary(videos, release) {
-  const rows = videos.map((video) => `| ${video.aspect} | ${video.share_url ? `[Watch](${video.share_url})` : "—"} | ${video.release_asset ? `[MP4](${video.release_asset})` : "—"} | [Studio](${video.studio_url}) |`);
-  return [`### Motioneed video${videos.length > 1 ? "s" : ""}${release?.tag_name ? ` for ${release.tag_name}` : ""}`, "", "| Frame | Share | Release asset | Edit |", "|---|---|---|---|", ...rows, ""].join("\n");
+  const rows = videos.map((video) => `| ${video.aspect} | ${video.share_url ? `[Watch](${video.share_url})` : "—"} | ${video.release_asset ? `[MP4](${video.release_asset})` : "—"} | ${video.release_poster ? `[JPG](${video.release_poster})` : "—"} | [Studio](${video.studio_url}) |`);
+  const cover = videos.find((video) => video.release_poster)?.release_poster;
+  return [`### Motioneed video${videos.length > 1 ? "s" : ""}${release?.tag_name ? ` for ${release.tag_name}` : ""}`, "", ...(cover ? [`![Cover](${cover})`, ""] : []), "| Frame | Share | Release asset | Cover | Edit |", "|---|---|---|---|---|", ...rows, ""].join("\n");
 }
