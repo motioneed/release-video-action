@@ -215,3 +215,19 @@ test("repo image links go to the raw host, where the job token works (spec 528)"
   assert.equal(String(rawUrl("https://github.com/user-attachments/assets/1111")), "https://github.com/user-attachments/assets/1111");
   assert.equal(String(rawUrl("https://example.com/acme/app/raw/main/x.png")), "https://example.com/acme/app/raw/main/x.png");
 });
+
+test("badges, buttons and SVGs in release notes are not screenshots and are left out quietly (v1.1.1)", () => {
+  const body = [
+    "![Setup x64](https://img.shields.io/badge/Setup-x64-0078D6?style=flat-square&logo=windows)",
+    "![DMG Apple Silicon](https://img.shields.io/badge/DMG-Apple_Silicon-000000?style=flat-square&logo=apple)",
+    "[![CI](https://github.com/acme/app/actions/workflows/ci.yml/badge.svg)](https://github.com/acme/app/actions)",
+    "[![Ko-fi](https://storage.ko-fi.com/cdn/kofi3.png?v=3)](https://ko-fi.com/acme)",
+    "<img src=\"https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png\" alt=\"Buy me a coffee\">",
+    "![Stars](https://api.star-history.com/svg?repos=acme/app&type=Date)",
+    "![Logo](https://acme.dev/logo.svg)",
+    "![Coverage](https://codecov.io/gh/acme/app/branch/main/graph/badge.svg)",
+    "![New editor](https://github.com/user-attachments/assets/5555)",
+    "![Dark mode](https://acme.dev/img/dark-mode.png)",
+  ].join("\n");
+  assert.deepEqual(releaseImages(body).map((item) => item.name), ["New editor", "Dark mode"]);
+});

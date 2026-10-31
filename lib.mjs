@@ -42,6 +42,10 @@ const MAGIC = {
   gif: (b) => b.length > 6 && /^GIF8[79]a$/.test(b.toString("latin1", 0, 6)),
 };
 
+// Badges and buttons in release notes are not screenshots: download badges, CI status, sponsor
+// buttons, star charts, and any SVG (never a supported type). They are left out quietly.
+const NOT_SHOTS = /^https?:\/\/([^/]*\.)?(shields\.io|badgen\.net|badge\.fury\.io|codecov\.io|coveralls\.io|sonarcloud\.io|app\.codacy\.com|deepwiki\.com|star-history\.com|api\.star-history\.com|contrib\.rocks|ko-fi\.com|storage\.ko-fi\.com|buymeacoffee\.com|cdn\.buymeacoffee\.com|liberapay\.com|patreon\.com|opencollective\.com|repobeats\.axiom\.co)\/|\/actions\/workflows\/[^?#]+\/badge\.svg|\/badge(\.svg)?(\?|#|$)|\.svg(\?|#|$)/i;
+
 /** Screenshots and GIFs in release notes (spec 528), in order, once each: markdown images and <img> tags. */
 export function releaseImages(body = "") {
   const text = String(body || "").replace(/<!--[\s\S]*?-->/g, "");
@@ -50,7 +54,7 @@ export function releaseImages(body = "") {
   for (const match of text.matchAll(pattern)) {
     const url = (match[2] || match[3] || "").trim();
     const alt = match[1] || (/\balt\s*=\s*["']([^"']*)["']/i.exec(match[0]) || [])[1] || "";
-    if (/^https?:\/\//i.test(url) && !found.some((item) => item.source === url)) found.push({ source: url, name: alt.trim().slice(0, 60), use: "screen" });
+    if (/^https?:\/\//i.test(url) && !NOT_SHOTS.test(url) && !found.some((item) => item.source === url)) found.push({ source: url, name: alt.trim().slice(0, 60), use: "screen" });
   }
   return found;
 }
@@ -96,7 +100,7 @@ export function rawUrl(source) {
 async function download(source, token, fetcher) {
   const url = rawUrl(source);
   const headers = token && url.protocol === "https:" && GITHUB_HOSTS.has(url.hostname) ? { authorization: `Bearer ${token}` } : {};
-  const response = await fetcher(url, { headers, redirect: "follow", signal: AbortSignal.timeout(15_000) });
+  const response = await fetcher(url, { headers, redirect: "follow", signal: AbortSignal.timeout(60_000) });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const declared = Number(response.headers.get("content-length") || 0);
   if (declared > MAX_IMAGE_BYTES) throw new Error("it is over 5 MB");
