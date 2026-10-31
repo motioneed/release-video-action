@@ -19,7 +19,7 @@ This video was made by this action from a real release: a 30-second demo with na
 
 ## Quick start
 
-1. Create an API key at [motioneed.com/account](https://www.motioneed.com/account?ref=action) (paid plans and credit packs).
+1. Create an API key at [motioneed.com/account](https://www.motioneed.com/account?ref=action). A free account gets one key, for videos up to 10 seconds with the Motioneed logo (set `seconds: "10"`); paid plans make longer videos without it.
 2. Add it to your repository as the secret `MOTIONEED_API_KEY`.
 3. Add `.github/workflows/release-video.yml`:
 
